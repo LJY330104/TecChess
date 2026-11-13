@@ -212,7 +212,7 @@ function posZIndex(pos: cg.Pos, asWhite: boolean): string {
   return `${z}`;
 }
 
-const pieceNameOf = (piece: cg.Piece): string => `${piece.color} ${piece.role}`;
+const pieceNameOf = (piece: cg.Piece): string => util.pieceClass(piece);
 
 const normalizeLastMoveStandardRookCastle = (s: State, k: cg.Key): cg.Key =>
   !!s.lastMove?.[1] &&

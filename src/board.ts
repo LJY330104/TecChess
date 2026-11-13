@@ -45,7 +45,7 @@ export function setCheck(state: HeadlessState, color: cg.Color | boolean): void 
   if (color === true) color = state.turnColor;
   if (color)
     for (const [k, p] of state.pieces) {
-      if (p.role === 'king' && p.color === color) {
+      if ((p.role === 'king' || p.fusion === 'king') && p.color === color) {
         state.check = k;
       }
     }
@@ -82,7 +82,7 @@ function tryAutoCastle(state: HeadlessState, orig: cg.Key, dest: cg.Key): boolea
   if (!state.autoCastle) return false;
 
   const king = state.pieces.get(orig);
-  if (!king || king.role !== 'king') return false;
+  if (!king || king.role !== 'king' || king.fusion) return false;
 
   const origPos = key2pos(orig);
   const destPos = key2pos(dest);
@@ -92,7 +92,7 @@ function tryAutoCastle(state: HeadlessState, orig: cg.Key, dest: cg.Key): boolea
     else if (destPos[0] === 2) dest = pos2keyUnsafe([0, destPos[1]]);
   }
   const rook = state.pieces.get(dest);
-  if (!rook || rook.color !== king.color || rook.role !== 'rook') return false;
+  if (!rook || rook.color !== king.color || rook.role !== 'rook' || rook.fusion) return false;
 
   state.pieces.delete(orig);
   state.pieces.delete(dest);

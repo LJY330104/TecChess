@@ -1,0 +1,6 @@
+[build]
+command = "bash build-site.sh"
+publish = "site"
+
+[build.environment]
+NODE_VERSION = "24"

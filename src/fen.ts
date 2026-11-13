@@ -12,7 +12,7 @@ const roles: Record<string, cg.Role> = {
   k: 'king',
 };
 
-const letters = {
+const letters: Record<cg.Role, string> = {
   pawn: 'p',
   rook: 'r',
   knight: 'n',
@@ -26,7 +26,8 @@ export function read(fen: cg.FEN): cg.Pieces {
   const pieces: cg.Pieces = new Map();
   let row = 7,
     col = 0;
-  for (const c of fen) {
+  for (let i = 0; i < fen.length; ++i) {
+    const c = fen[i];
     switch (c) {
       case ' ':
       case '[':
@@ -47,12 +48,26 @@ export function read(fen: cg.FEN): cg.Pieces {
         if (nb < 57) col += nb - 48;
         else {
           const role = c.toLowerCase();
+          const pieceRole = roles[role];
+          if (!pieceRole) {
+            ++col;
+            break;
+          }
+          const piece: cg.Piece = {
+            role: pieceRole,
+            color: c === role ? 'black' : 'white',
+          };
+          // A fused piece is written as two role letters joined by '+' in the
+          // board field, e.g. `K+R` for a white king-rook.
+          if (fen[i + 1] === '+') {
+            const fusedRole = roles[fen[i + 2]?.toLowerCase()];
+            if (fusedRole) {
+              piece.fusion = fusedRole;
+              i += 2;
+            }
+          }
           const key = pos2key([col, row]);
-          if (key)
-            pieces.set(key, {
-              role: roles[role],
-              color: c === role ? 'black' : 'white',
-            });
+          if (key) pieces.set(key, piece);
           ++col;
         }
       }
@@ -69,6 +84,7 @@ export function write(pieces: cg.Pieces): cg.FEN {
           const piece = pieces.get((x + y) as cg.Key);
           if (piece) {
             let p = letters[piece.role];
+            if (piece.fusion) p += '+' + letters[piece.fusion];
             if (piece.color === 'white') p = p.toUpperCase();
             if (piece.promoted) p += '~';
             return p;

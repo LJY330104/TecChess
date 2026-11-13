@@ -57,7 +57,11 @@ export const distanceSq = (pos1: cg.Pos, pos2: cg.Pos): number =>
   (pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2;
 
 export const samePiece = (p1: cg.Piece, p2: cg.Piece): boolean =>
-  p1.role === p2.role && p1.color === p2.color;
+  p1.role === p2.role && p1.color === p2.color && p1.fusion === p2.fusion;
+
+/** CSS class names for a piece, including the extra role of a fused piece. */
+export const pieceClass = (p: cg.Piece): string =>
+  `${p.color} ${p.role}${p.fusion ? ` fused fused-${p.fusion}` : ''}`;
 
 export const samePos = (p1: cg.Pos, p2: cg.Pos): boolean => p1[0] === p2[0] && p1[1] === p2[1];
 

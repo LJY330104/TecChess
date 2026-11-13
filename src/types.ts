@@ -13,6 +13,14 @@ export interface Piece {
   role: Role;
   color: Color;
   promoted?: boolean;
+  /** Extra role of a fused piece.
+   *
+   * A fused piece is a single board piece made of two original pieces of the
+   * same colour. `role` is the primary role (the one used for the piece's
+   * main glyph), while `fusion` is the additional role. Fused pieces move
+   * and capture as either role. See `fusion.ts` for the rules.
+   */
+  fusion?: Role;
 }
 export interface Drop {
   role: Role;

@@ -9,6 +9,15 @@ _Chessground_ is a free/libre open source chess UI developed for
 [lichess.org](https://lichess.org).
 It targets modern browsers, as well as mobile development using Cordova.
 
+## Fusion variant
+
+This repository also contains a client-side fusion chess variant, including rules, FEN support, fused piece rendering and a playable demo. See [FUSION.md](FUSION.md) and [index.html](index.html).
+
+- Local one-click demo: `./start-demo.sh`
+- Static build: `./build-site.sh` → `site/`
+- GitHub Pages: `.github/workflows/pages.yml` deploys the static site on every push to `master` (after Pages is enabled for the repository).
+- Netlify: `netlify.toml` is included.
+
 ## License
 
 Chessground is distributed under the **GPL-3.0 license** (or any later version,

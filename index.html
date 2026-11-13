@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="在 Chessground 上实现的科技象棋变体：王车、王象、王马、马象、马车可以融合，也可以分裂走子。" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B3%3C/text%3E%3C/svg%3E" />
+    <title>科技象棋 · TecChess</title>
+    <link rel="stylesheet" type="text/css" href="assets/chessground.base.css" />
+    <link rel="stylesheet" type="text/css" href="assets/chessground.brown.css" />
+    <link rel="stylesheet" type="text/css" href="assets/chessground.cburnett.css" />
+    <link rel="stylesheet" type="text/css" href="assets/chessground.fusion.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #14171d;
+        --panel: #1d222b;
+        --panel-2: #262d38;
+        --text: #e8ecf1;
+        --muted: #94a0b2;
+        --accent: #efb34d;
+        --accent-2: #6aa9ff;
+        --line: #343d4b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 20% 0%, #233044 0, var(--bg) 46%);
+        color: var(--text);
+        font:
+          15px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          'Noto Sans SC',
+          sans-serif;
+      }
+
+      .layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        justify-content: center;
+        align-items: flex-start;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      .board-column {
+        flex: 0 1 580px;
+        min-width: 300px;
+      }
+
+      .board-title {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .board-title h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      #board {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow:
+          0 0 0 1px #000a,
+          0 18px 50px #0008;
+      }
+
+      .hint {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .hint kbd {
+        padding: 1px 5px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #0f1217;
+        color: var(--text);
+        font-family: inherit;
+        font-size: 12px;
+      }
+
+      .panel {
+        flex: 0 1 420px;
+        min-width: 300px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: linear-gradient(180deg, #202631, #1a1f27);
+        box-shadow: 0 18px 50px #0006;
+      }
+
+      .status {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .turn {
+        font-weight: 700;
+        font-size: 17px;
+      }
+
+      .turn.white::before,
+      .turn.black::before {
+        content: '';
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        margin-right: 7px;
+        border-radius: 50%;
+        vertical-align: 1px;
+      }
+
+      .turn.white::before {
+        background: #f3f0e8;
+        box-shadow: 0 0 0 1px #0008;
+      }
+
+      .turn.black::before {
+        background: #252a31;
+        box-shadow: 0 0 0 1px #fff4;
+      }
+
+      .state {
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .state.check {
+        color: #ffd58a;
+        background: #4a3413;
+      }
+
+      .state.checkmate {
+        color: #ffd0d0;
+        background: #542027;
+      }
+
+      .state.stalemate {
+        color: #cfe8ff;
+        background: #1e3a52;
+      }
+
+      .selection {
+        min-height: 44px;
+        margin-bottom: 14px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #151920;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .modes {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .mode {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #202733;
+        color: var(--text);
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          transform 0.15s;
+      }
+
+      .mode:hover {
+        border-color: #56637a;
+        background: #273040;
+      }
+
+      .mode.active {
+        border-color: var(--accent);
+        background: #3a2e16;
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+
+      .mode.hint {
+        cursor: default;
+      }
+
+      .mode.hint:not(.active):hover {
+        border-color: var(--line);
+        background: #202733;
+      }
+
+      .mode.hint b {
+        display: inline-block;
+        min-width: 1.4em;
+        margin-right: 4px;
+        color: var(--accent);
+      }
+
+      .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .buttons button {
+        flex: 1 1 auto;
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #202733;
+        color: var(--text);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .buttons button:hover:not(:disabled) {
+        border-color: #56637a;
+      }
+
+      .buttons button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      h2 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .log {
+        max-height: 168px;
+        margin: 0 0 18px;
+        padding: 0;
+        overflow: auto;
+        list-style: none;
+        border-top: 1px solid var(--line);
+      }
+
+      .log li {
+        padding: 5px 2px;
+        border-bottom: 1px solid #252c37;
+        color: #cbd4e1;
+        font-size: 13px;
+      }
+
+      .log li.empty {
+        color: #6c7788;
+        border: 0;
+      }
+
+      .rules {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+
+      .rules strong {
+        color: var(--text);
+      }
+
+      .rules ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+
+      .rules code {
+        color: #ffd58a;
+        font-size: 12px;
+      }
+
+      @media (max-width: 760px) {
+        .layout {
+          padding-top: 18px;
+        }
+
+        .panel {
+          max-width: 580px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="board-column">
+        <div class="board-title">
+          <h1>科技象棋</h1>
+        </div>
+        <div id="board"></div>
+        <p class="hint">
+          科技象棋连点切换走法：第 1 下 = 融合走子（两子一起走），第 2 下 = 分裂走子
+          （显示全部融合轨迹，按目标格决定只动哪个），第 3 下 = 取消选择。选好走法后点目标格即可走子。
+          把可融合的友方棋子走到同一格即可融合。
+        </p>
+      </section>
+
+      <aside class="panel">
+        <div class="status">
+          <span id="turn" class="turn white">轮到白方</span>
+          <span id="status" class="status state">对局进行中</span>
+        </div>
+
+        <div id="selection" class="selection">点击自己的棋子开始走子</div>
+        <div id="modes" class="modes"></div>
+
+        <div class="buttons">
+          <button id="standard">标准棋局</button>
+          <button id="lab">融合实验室</button>
+          <button id="undo">撤销</button>
+        </div>
+
+        <h2>走子记录</h2>
+        <ul id="log" class="log"></ul>
+
+        <h2>规则</h2>
+        <div class="rules">
+          <strong>可融合：</strong>王车、王象、王马、马象、马车（同色）。
+          一个棋子走到另一个同色可融合的棋子的格子上时合并。
+          <ul>
+            <li>融合后的棋子可照两个原棋子的任意一种走法移动和吃子。</li>
+            <li>第 1 下点融合后的棋子：融合走子，两个子一起移动。</li>
+            <li>
+              第 2
+              下点融合后的棋子：分裂走子，显示两部分全部轨迹，走子后按目标格决定只动哪个子，另一个留在原格；两个子都能到达目标格时优先动主角色。
+            </li>
+            <li>第 3 下点融合后的棋子：取消选择。</li>
+            <li>融合后的棋子不能再与第三个子融合；兵、后不参与融合。</li>
+            <li>王的规则仍然生效：不能把王（包括融合后的棋子中的王）走进对方攻击格。</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="./dist/fusion-demo.js"></script>
+  </body>
+</html>
